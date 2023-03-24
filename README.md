@@ -14,9 +14,15 @@ For 'Translated' it only calculates the rows where the selected language ('RU' b
 100% progress is colored with light green
 
 How to use
-1.Download your source files from *YOUR CAT* in the original format:
-2.Pick a folder where there are source files, downloaded from yfsail, by clicking 'Browse'(or just drop files in the \source\ subfolder)
-3.Pick a place to save the report, by clicking the button 'Save report to...'(or don't do anything, it'll save the report in '\reports\ subfolder)
+1.Download your source files from *YOUR CAT* in the original format:
+
+2.Pick a folder where there are source files, downloaded from yfsail, by clicking 'Browse'
+(or just drop files in the \source\ subfolder)
+
+3.Pick a place to save the report, by clicking the button 'Save report to...'
+
+(or don't do anything, it'll save the report in '\reports\ subfolder)
+
 4.Click 'Process files'
 It will generate a pre-formatted Excel spreadsheet.
 
