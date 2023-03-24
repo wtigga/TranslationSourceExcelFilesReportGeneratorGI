@@ -8,6 +8,8 @@ from tkinter import filedialog
 from datetime import datetime
 from tkinter import ttk
 from tkinter import messagebox
+import openpyxl
+import unicodedata
 
 #### SOURCE FILE LOAD & PREPARATION ####
 
@@ -77,6 +79,14 @@ def filter_columns(df: Dict[str, pd.DataFrame], source_lang_code: str, target_la
 
 #### CALCULATIONS ####
 
+def count_chinese_characters(s):
+    count = 0
+    for c in s:
+        if 'CJK UNIFIED IDEOGRAPH' in unicodedata.name(c, ''):
+            count += 1
+    return count
+
+'''
 def calculate_characters_per_sheet(data_dict: Dict[str, List[str]]) -> Dict[str, int]:
     character_count = {}
 
@@ -85,7 +95,18 @@ def calculate_characters_per_sheet(data_dict: Dict[str, List[str]]) -> Dict[str,
         character_count[sheet_name] = total_characters
 
     return character_count
+'''
 
+def calculate_characters_per_sheet(data_dict: Dict[str, List[str]]) -> Dict[str, int]:
+    character_count = {}
+
+    for sheet_name, words in data_dict.items():
+        total_chinese_characters = sum(count_chinese_characters(word) for word in words)
+        character_count[sheet_name] = total_chinese_characters
+
+    return character_count
+
+'''
 def calculate_characters_per_sheet_unique(data_dict: Dict[str, List[str]]) -> Dict[str, int]:
     character_count_unique = {}
 
@@ -97,8 +118,22 @@ def calculate_characters_per_sheet_unique(data_dict: Dict[str, List[str]]) -> Di
         total_characters = sum(len(word) for word in unique_words)
         character_count_unique[sheet_name] = total_characters
 
+    return character_count_unique'''
+
+def calculate_characters_per_sheet_unique(data_dict: Dict[str, List[str]]) -> Dict[str, int]:
+    character_count_unique = {}
+
+    for sheet_name, words in data_dict.items():
+        # Remove duplicates from the list
+        unique_words = list(set(words))
+
+        # Calculate the total number of Chinese characters for unique words
+        total_chinese_characters = sum(count_chinese_characters(word) for word in unique_words)
+        character_count_unique[sheet_name] = total_chinese_characters
+
     return character_count_unique
 
+'''
 def character_count_untranslated(data: Dict[str, pd.DataFrame], source: str, target: str) -> Dict[str, int]:
     untranslated_count = {}
 
@@ -110,6 +145,25 @@ def character_count_untranslated(data: Dict[str, pd.DataFrame], source: str, tar
             # Calculate the total number of characters in the source_lang_code column
             total_characters = untranslated_df[source].str.len().sum()
             untranslated_count[sheet_name] = total_characters
+        except KeyError:
+            print(f"Error: Columns '{source}' or '{target}' not found in sheet '{sheet_name}'")
+        except Exception as e:
+            print(f"Error: {e}")
+
+    return untranslated_count
+'''
+
+def character_count_untranslated(data: Dict[str, pd.DataFrame], source: str, target: str) -> Dict[str, int]:
+    untranslated_count = {}
+
+    for sheet_name, sheet_df in data.items():
+        try:
+            # Remove rows where the target_lang_code column is not empty
+            untranslated_df = sheet_df[sheet_df[target].isna()]
+
+            # Calculate the total number of Chinese characters in the source_lang_code column
+            total_chinese_characters = untranslated_df[source].apply(count_chinese_characters).sum()
+            untranslated_count[sheet_name] = total_chinese_characters
         except KeyError:
             print(f"Error: Columns '{source}' or '{target}' not found in sheet '{sheet_name}'")
         except Exception as e:
@@ -218,7 +272,7 @@ def from_file_to_dataframe(source_file_path, source_lang_code, target_lang_code,
     completeness = completion_percentage(character_count_dict, translated_count)
 
     # Create a list of all dicts (except unique)
-    full_result_list = [character_count_dict, untranslated_character_count, translated_count, completeness]
+    full_result_list = [character_count_dict, translated_count, untranslated_character_count, completeness]
 
     # Create a single dictionary
     full_result_dict = combine_dictionaries(full_result_list)
@@ -234,10 +288,10 @@ def from_file_to_dataframe(source_file_path, source_lang_code, target_lang_code,
 ### COMPILING AN EXCEL ####
 
 def save_dataframe_to_excel(df: pd.DataFrame, report_save_path: str):
-    df = df.fillna('NA')
-    df = df.replace([np.inf, -np.inf], 'Inf')
-    with pd.ExcelWriter(report_save_path, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name="Report")
+#    df = df.fillna('NA')
+#    df = df.replace([np.inf, -np.inf], 'Inf')
+    with pd.ExcelWriter(report_save_path, engine='xlsxwriter', options={'nan_inf_to_errors': True}) as writer:
+        df.to_excel(writer, index=False, sheet_name="Report", na_rep='')
 
         # Get the workbook and worksheet objects
         workbook = writer.book
@@ -250,7 +304,7 @@ def save_dataframe_to_excel(df: pd.DataFrame, report_save_path: str):
 
         # Set row height
         for row_num in range(len(df) + 1):
-            worksheet.set_row(row_num, 30)  # 30 points height, which is double the standard height
+            worksheet.set_row(row_num, 20)  # 30 points height, which is double the standard height
 
         # Apply vertical and horizontal center alignment, wrap text
         cell_format = workbook.add_format({
@@ -259,7 +313,19 @@ def save_dataframe_to_excel(df: pd.DataFrame, report_save_path: str):
             'font_name': 'Calibri',
             'text_wrap': True
         })
+        #################
+        # Add the "Total" row
+        total_row = len(df) + 1
 
+        # Write the "Total" label
+        worksheet.write(total_row, 0, 'Total', cell_format)
+
+        # Write the sum formulas for the 3rd, 4th, and 5th columns
+        for col_num in range(2, 5):
+            column_letter = chr(ord('A') + col_num)
+            worksheet.write_formula(total_row, col_num, f'=SUM({column_letter}2:{column_letter}{total_row})',
+                                    cell_format)
+        ##################
         # Apply percentage formatting for 6th column
         percentage_format = workbook.add_format({
             'align': 'center',
@@ -308,6 +374,7 @@ def save_dataframe_to_excel(df: pd.DataFrame, report_save_path: str):
                 if row_num - 1 > start_row:
                     worksheet.merge_range(start_row, 0, row_num - 1, 0, df.iat[start_row - 1, 0], cell_format)
                 start_row = row_num
+
 #save the report in Excel format
 
 def process_and_save(xlsx_files, source_lang_code, target_lang_code, report_headers, report_save_path):
