@@ -460,12 +460,12 @@ report_save_path_label = tk.Label(window, text=report_save_path)
 report_save_path_label.grid(row=0, column=1, padx=10, pady=10)
 
 # Elements for language codes
-lang_codes_label1 = tk.Label(window, text="Source Language Code:")
-lang_codes_label1.grid(row=1, column=0, sticky='w', padx=10, pady=10)
+#lang_codes_label1 = tk.Label(window, text="Source Language Code:")
+#lang_codes_label1.grid(row=1, column=0, sticky='w', padx=10, pady=10)
 source_lang_code = tk.StringVar()
 source_lang_combobox = ttk.Combobox(window, textvariable=source_lang_code, values=source_lang_codes_all)
 source_lang_combobox.current(source_lang_codes_all.index('CHS'))
-source_lang_combobox.grid(row=1, column=1, sticky='w', padx=10, pady=10)
+#source_lang_combobox.grid(row=1, column=1, sticky='w', padx=10, pady=10)
 
 lang_codes_label2 = tk.Label(window, text="Target Language Code:")
 lang_codes_label2.grid(row=2, column=0, sticky='w', padx=10, pady=10)
