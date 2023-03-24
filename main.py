@@ -9,7 +9,6 @@ from datetime import datetime
 from tkinter import ttk
 from tkinter import messagebox
 
-
 #### SOURCE FILE LOAD & PREPARATION ####
 
 def list_xlsx_files(folder_location: str) -> list:  #to get a list of xlsx files
@@ -136,7 +135,6 @@ def completion_percentage(input_1, input_2):
         result[key] = round(completion, 2)
 
     return result
-
 
 ### OUTPUT DATA PREPARATIONS ###
 
@@ -316,7 +314,6 @@ def process_and_save(xlsx_files, source_lang_code, target_lang_code, report_head
     combined_df = process_excel_files(xlsx_files, source_lang_code, target_lang_code, report_headers)
     save_dataframe_to_excel(combined_df, report_save_path)
 
-
 #### VARIABLES #####
 folder_location = r'C:\1'
 folder_location = os.getcwd() + '\source'
@@ -350,7 +347,6 @@ report_save_path = r'c:\2\report.xlsx'
 report_save_path = os.getcwd() + (str(r'\reports\report.xlsx'))
 
 #button should call this function
-
 
 def for_button():
     try:
