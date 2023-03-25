@@ -1,7 +1,10 @@
-# TranslationSourceExcelFilesReportGeneratorGI
+# Translation Report Generation Tool - Chinese GI
 
-This is a simple internal tool that takes a folder with *.XLSX files as an input, and produces a report based on it.
-It is used to generate a report about the translation files.
+This is a small script with GUI that allows you to generate a report based on source translation files.
+
+It takes *.XLSX files as an incoming data. The format of the spreadsheet is simple: header with double-letter language codes, and the source Chinese column as 'CHS'. It can have multiple sheets within one spreadsheet file.
+
+Each sheet is treated as an 'ID', and all the content will be calculated of one sheet will be placed in one row.
 
 Description
 A tool to generate a translation progress and statistics report based on a folder with *.xlsx files downloaded from *YOUR CAT*. You can then copy this report elsewhere (for example, into the Google Docs spreadsheet).
