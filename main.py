@@ -454,9 +454,14 @@ report_headers = [
 language_codes = [
     'CHS', 'CHT', 'DE', 'EN', 'ES', 'FR', 'ID', 'JP', 'KR', 'PT', 'RU', 'TH', 'VI', 'TR', 'IT'
 ]
+
+now = datetime.now()
+timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
+
 source_lang_codes_all = language_codes
 report_save_path = r'c:\2\report.xlsx'
-report_save_path = os.getcwd() + (str(r'\reports\report.xlsx'))
+#report_save_path = os.getcwd() + (str(r'\reports\report.xlsx'))
+report_save_path = os.getcwd() + (str(r'\reports\report_{}.xlsx'.format(timestamp)))
 
 
 # button should call this function
@@ -475,15 +480,6 @@ def for_button():
 
 # GUI##########################################
 
-# Create a new window object
-window = tk.Tk()
-
-# Set the window title
-window.title("Genshin Language Source File Statistics")
-
-# Set the window size
-window.geometry("1000x300")
-
 
 # Define a function to browse for a folder
 def browse_folder():
@@ -501,14 +497,23 @@ def save_report():
     report_save_path_label.config(text=report_save_path)
 
 
+# Create a new window object
+window = tk.Tk()
+
+# Set the window title
+window.title("Genshin Language Source File Statistics")
+
+# Set the window size
+window.geometry("600x200")
+
 # Create a frame to hold the browse button and file path
 frame = tk.Frame(window)
 
 # Elements for saving report
 save_report_button = tk.Button(window, text="Save report to...", command=save_report)
-save_report_button.grid(row=0, column=0, padx=10, pady=10)
+save_report_button.grid(row=0, column=0, padx=10, pady=10, sticky='w')
 report_save_path_label = tk.Label(window, text=report_save_path)
-report_save_path_label.grid(row=0, column=1, padx=10, pady=10)
+report_save_path_label.grid(row=0, column=0, padx=120, pady=10, sticky='w')
 
 # Elements for language codes
 # lang_codes_label1 = tk.Label(window, text="Source Language Code:")
@@ -520,14 +525,15 @@ source_lang_combobox.current(source_lang_codes_all.index('CHS'))
 
 lang_codes_label2 = tk.Label(window, text="Target Language Code:")
 lang_codes_label2.grid(row=2, column=0, sticky='w', padx=10, pady=10)
+
 target_lang_code = tk.StringVar()
 target_lang_combobox = ttk.Combobox(window, textvariable=target_lang_code, values=source_lang_codes_all)
 target_lang_combobox.current(source_lang_codes_all.index('RU'))
-target_lang_combobox.grid(row=2, column=1, sticky='w', padx=10, pady=10)
+target_lang_combobox.grid(row=2, column=0, sticky='w', padx=150, pady=10)
 
 # Create a frame to hold the browse button and file path
 frame = tk.Frame(window)
-frame.grid(row=3, column=0, padx=10, pady=10)
+frame.grid(row=3, column=0, padx=10, pady=10, sticky='w')
 
 # Create a button to browse for a folder
 browse_button = tk.Button(frame, text="Browse", command=browse_folder)
@@ -541,7 +547,7 @@ folder_path_entry.pack(side="left")
 
 # Button to process files
 process_button = tk.Button(window, text="Process Files", command=for_button)
-process_button.grid(row=4, column=1, padx=10, pady=10)
+process_button.grid(row=4, column=0, padx=10, pady=10, sticky='w')
 
 # Start the main event loop
 window.mainloop()
