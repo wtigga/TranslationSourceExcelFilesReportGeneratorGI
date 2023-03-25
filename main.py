@@ -11,25 +11,48 @@ from tkinter import messagebox
 import openpyxl
 import unicodedata
 
+
 #### SOURCE FILE LOAD & PREPARATION ####
 
-def list_xlsx_files(folder_location: str) -> list:  #to get a list of xlsx files
-    # Combine folder location with the file pattern
+def list_xlsx_files(folder_location: str) -> list:
+    """
+    Returns a list of paths to all the xlsx files in a given folder location.
+
+    :param folder_location: The path to the folder to search for xlsx files.
+    :type folder_location: str
+    :return: A list of paths to all the xlsx files found in the folder location.
+    :rtype: list
+    """
+
+    # Combine the folder location with the xlsx file pattern to create a search pattern.
     file_pattern = os.path.join(folder_location, "*.xlsx")
 
-    # Use glob to find all matching files
+    # Use the glob module to find all files that match the search pattern.
     xlsx_files = glob.glob(file_pattern)
 
+    # Return the list of xlsx files.
     return xlsx_files
 
+
 def source_file_name(source_file_path: str) -> str:
-    # Get the file name with the extension
+    """
+    Extracts the name of the file (without extension) from the given file path.
+
+    :param source_file_path: The full path to the file.
+    :type source_file_path: str
+    :return: The name of the file (without extension).
+    :rtype: str
+    """
+
+    # Extract the filename with extension from the source file path.
     filename_with_extension = os.path.basename(source_file_path)
 
-    # Remove the file extension
+    # Split the filename into the base name and the extension, and return only the base name.
     filename_without_extension, _ = os.path.splitext(filename_with_extension)
 
+    # Return the base name of the file.
     return filename_without_extension
+
 
 def load_excel_file(source_file_path: str):
     try:
@@ -43,8 +66,9 @@ def load_excel_file(source_file_path: str):
         print(f"Error: {e}")
         return None
 
+
 def extract_column_from_sheets(df: Dict[str, pd.DataFrame], source_lang_code: str) -> Dict[str, List]:
-    #It puts all the source lang data into the dictionary, one key per sheet.
+    # It puts all the source lang data into the dictionary, one key per sheet.
     sheet_dict = {}
 
     # Iterate through all the sheets in the Excel file
@@ -62,9 +86,11 @@ def extract_column_from_sheets(df: Dict[str, pd.DataFrame], source_lang_code: st
 
     return sheet_dict
 
-def filter_columns(df: Dict[str, pd.DataFrame], source_lang_code: str, target_lang_code: str) -> Dict[str, pd.DataFrame]:
+
+def filter_columns(df: Dict[str, pd.DataFrame], source_lang_code: str, target_lang_code: str) -> Dict[
+    str, pd.DataFrame]:
     filtered_sheets = {}
-    #return dataframe with just chs and ru
+    # return dataframe with just chs and ru
     for sheet_name, sheet_df in df.items():
         try:
             # Keep only the desired columns
@@ -77,6 +103,7 @@ def filter_columns(df: Dict[str, pd.DataFrame], source_lang_code: str, target_la
 
     return filtered_sheets
 
+
 #### CALCULATIONS ####
 
 def count_chinese_characters(s):
@@ -86,7 +113,10 @@ def count_chinese_characters(s):
             count += 1
     return count
 
+
 '''
+# This function will count any characters in source, not just Chinese characters.
+# It's not used because the main reason for this tool is to calculate source in Chinese.
 def calculate_characters_per_sheet(data_dict: Dict[str, List[str]]) -> Dict[str, int]:
     character_count = {}
 
@@ -97,7 +127,10 @@ def calculate_characters_per_sheet(data_dict: Dict[str, List[str]]) -> Dict[str,
     return character_count
 '''
 
+
 def calculate_characters_per_sheet(data_dict: Dict[str, List[str]]) -> Dict[str, int]:
+    # This function calculate Chinese characters only in the source.
+    # It will ignore any code, digits, or other things that is common to see in source.
     character_count = {}
 
     for sheet_name, words in data_dict.items():
@@ -105,6 +138,7 @@ def calculate_characters_per_sheet(data_dict: Dict[str, List[str]]) -> Dict[str,
         character_count[sheet_name] = total_chinese_characters
 
     return character_count
+
 
 '''
 def calculate_characters_per_sheet_unique(data_dict: Dict[str, List[str]]) -> Dict[str, int]:
@@ -120,6 +154,7 @@ def calculate_characters_per_sheet_unique(data_dict: Dict[str, List[str]]) -> Di
 
     return character_count_unique'''
 
+
 def calculate_characters_per_sheet_unique(data_dict: Dict[str, List[str]]) -> Dict[str, int]:
     character_count_unique = {}
 
@@ -132,6 +167,7 @@ def calculate_characters_per_sheet_unique(data_dict: Dict[str, List[str]]) -> Di
         character_count_unique[sheet_name] = total_chinese_characters
 
     return character_count_unique
+
 
 '''
 def character_count_untranslated(data: Dict[str, pd.DataFrame], source: str, target: str) -> Dict[str, int]:
@@ -153,6 +189,7 @@ def character_count_untranslated(data: Dict[str, pd.DataFrame], source: str, tar
     return untranslated_count
 '''
 
+
 def character_count_untranslated(data: Dict[str, pd.DataFrame], source: str, target: str) -> Dict[str, int]:
     untranslated_count = {}
 
@@ -171,7 +208,9 @@ def character_count_untranslated(data: Dict[str, pd.DataFrame], source: str, tar
 
     return untranslated_count
 
-def translated_character_count(character_count_dict: Dict[str, int], untranslated_character_count: Dict[str, int]) -> Dict[str, int]:
+
+def translated_character_count(character_count_dict: Dict[str, int], untranslated_character_count: Dict[str, int]) -> \
+Dict[str, int]:
     translated_count = {}
 
     for sheet_name, total_characters in character_count_dict.items():
@@ -181,30 +220,31 @@ def translated_character_count(character_count_dict: Dict[str, int], untranslate
 
     return translated_count
 
+
 def completion_percentage(input_1, input_2):
     result = {}
     for key in input_1.keys():
-        completion = (input_2[key] / input_1[key]) #* 100
-        #result[key] = f"{completion:.0f}%"
+        completion = (input_2[key] / input_1[key])  # * 100
+        # result[key] = f"{completion:.0f}%"
         result[key] = round(completion, 2)
-
     return result
+
 
 ### OUTPUT DATA PREPARATIONS ###
 
 def combine_dictionaries(dict_list: List[Dict[str, int]]) -> Dict[str, List[int]]:
     combined_dict = {}
-
     for dictionary in dict_list:
         for key, value in dictionary.items():
             if key in combined_dict:
                 combined_dict[key].append(value)
             else:
                 combined_dict[key] = [value]
-
     return combined_dict
 
-def populate_report_df(data: Dict[str, List[int]], filename: str, report_headers: List[str], existing_df: pd.DataFrame = None) -> pd.DataFrame:
+
+def populate_report_df(data: Dict[str, List[int]], filename: str, report_headers: List[str],
+                       existing_df: pd.DataFrame = None) -> pd.DataFrame:
     if existing_df is None:
         # Create an empty DataFrame with the specified headers
         report_df = pd.DataFrame(columns=report_headers)
@@ -232,7 +272,9 @@ def populate_report_df(data: Dict[str, List[int]], filename: str, report_headers
 
     return report_df
 
-def process_excel_files(file_list: list, source_lang_code: str, target_lang_code: str, report_headers: list) -> pd.DataFrame:
+
+def process_excel_files(file_list: list, source_lang_code: str, target_lang_code: str,
+                        report_headers: list) -> pd.DataFrame:
     dataframes = []
 
     for file_path in file_list:
@@ -244,10 +286,10 @@ def process_excel_files(file_list: list, source_lang_code: str, target_lang_code
 
     return combined_df
 
+
 #### EXECUTION OF CALCULATIONS ###
 
 def from_file_to_dataframe(source_file_path, source_lang_code, target_lang_code, report_headers):
-
     # Load excel file
     original_frame = load_excel_file(source_file_path)
 
@@ -285,11 +327,12 @@ def from_file_to_dataframe(source_file_path, source_lang_code, target_lang_code,
 
     return report_df
 
+
 ### COMPILING AN EXCEL ####
 
 def save_dataframe_to_excel(df: pd.DataFrame, report_save_path: str):
-#    df = df.fillna('NA')
-#    df = df.replace([np.inf, -np.inf], 'Inf')
+    #    df = df.fillna('NA')
+    #    df = df.replace([np.inf, -np.inf], 'Inf')
     with pd.ExcelWriter(report_save_path, engine='xlsxwriter', options={'nan_inf_to_errors': True}) as writer:
         df.to_excel(writer, index=False, sheet_name="Report", na_rep='')
 
@@ -375,11 +418,13 @@ def save_dataframe_to_excel(df: pd.DataFrame, report_save_path: str):
                     worksheet.merge_range(start_row, 0, row_num - 1, 0, df.iat[start_row - 1, 0], cell_format)
                 start_row = row_num
 
-#save the report in Excel format
+
+# save the report in Excel format
 
 def process_and_save(xlsx_files, source_lang_code, target_lang_code, report_headers, report_save_path):
     combined_df = process_excel_files(xlsx_files, source_lang_code, target_lang_code, report_headers)
     save_dataframe_to_excel(combined_df, report_save_path)
+
 
 #### VARIABLES #####
 folder_location = r'C:\1'
@@ -413,19 +458,22 @@ source_lang_codes_all = language_codes
 report_save_path = r'c:\2\report.xlsx'
 report_save_path = os.getcwd() + (str(r'\reports\report.xlsx'))
 
-#button should call this function
+
+# button should call this function
 
 def for_button():
     try:
         process_and_save(xlsx_files, source_lang_code.get(), target_lang_code.get(), report_headers, report_save_path)
         # Show popup window with message "Process complete"
-        messagebox.showinfo("Process complete", "Report has been generated. You can find it at: " + str(report_save_path))
+        messagebox.showinfo("Process complete",
+                            "Report has been generated. You can find it at: " + str(report_save_path))
     except Exception as e:
         # Show popup window with error message
         messagebox.showerror("Error", str(e))
     print("Button clicked")
 
-#GUI##########################################
+
+# GUI##########################################
 
 # Create a new window object
 window = tk.Tk()
@@ -436,6 +484,7 @@ window.title("Genshin Language Source File Statistics")
 # Set the window size
 window.geometry("1000x300")
 
+
 # Define a function to browse for a folder
 def browse_folder():
     global folder_location
@@ -444,11 +493,13 @@ def browse_folder():
     global xlsx_files
     xlsx_files = list_xlsx_files(folder_location)
 
+
 def save_report():
     global report_save_path
     appendix = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     report_save_path = filedialog.asksaveasfilename(defaultextension='.xlsx', initialfile=f"report_{appendix}")
     report_save_path_label.config(text=report_save_path)
+
 
 # Create a frame to hold the browse button and file path
 frame = tk.Frame(window)
@@ -460,12 +511,12 @@ report_save_path_label = tk.Label(window, text=report_save_path)
 report_save_path_label.grid(row=0, column=1, padx=10, pady=10)
 
 # Elements for language codes
-#lang_codes_label1 = tk.Label(window, text="Source Language Code:")
-#lang_codes_label1.grid(row=1, column=0, sticky='w', padx=10, pady=10)
+# lang_codes_label1 = tk.Label(window, text="Source Language Code:")
+# lang_codes_label1.grid(row=1, column=0, sticky='w', padx=10, pady=10)
 source_lang_code = tk.StringVar()
 source_lang_combobox = ttk.Combobox(window, textvariable=source_lang_code, values=source_lang_codes_all)
 source_lang_combobox.current(source_lang_codes_all.index('CHS'))
-#source_lang_combobox.grid(row=1, column=1, sticky='w', padx=10, pady=10)
+# source_lang_combobox.grid(row=1, column=1, sticky='w', padx=10, pady=10)
 
 lang_codes_label2 = tk.Label(window, text="Target Language Code:")
 lang_codes_label2.grid(row=2, column=0, sticky='w', padx=10, pady=10)

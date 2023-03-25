@@ -4,6 +4,9 @@ This is a small script with GUI that allows you to generate a report based on so
 
 It takes *.XLSX files as an incoming data. The format of the spreadsheet is simple: header with double-letter language codes, and the source Chinese column as 'CHS'. It can have multiple sheets within one spreadsheet file.
 
+Hardcoded language codes:
+    'CHS', 'CHT', 'DE', 'EN', 'ES', 'FR', 'ID', 'JP', 'KR', 'PT', 'RU', 'TH', 'VI', 'TR', 'IT'
+
 Each sheet is treated as an 'ID', and all the content will be calculated of one sheet will be placed in one row.
 
 Description
