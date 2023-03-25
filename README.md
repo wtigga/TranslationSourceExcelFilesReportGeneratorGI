@@ -32,3 +32,8 @@ How to use
 4.Click 'Process files'
 It will generate a pre-formatted Excel spreadsheet.
 
+
+To compile the file into the Windows executable:
+
+pyinstaller --onefile --noconsole --upx-dir "c:\Soft\upx-4.0.2-win64"  --name genshin_tab_counter_3 main.py
+

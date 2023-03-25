@@ -501,7 +501,7 @@ def save_report():
 window = tk.Tk()
 
 # Set the window title
-window.title("Genshin Language Source File Statistics")
+window.title("Translation Report Generation Tool GI (v2023-03-25)")
 
 # Set the window size
 window.geometry("600x200")
