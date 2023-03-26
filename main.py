@@ -108,10 +108,36 @@ def filter_columns(df: Dict[str, pd.DataFrame], source_lang_code: str, target_la
 #### CALCULATIONS ####
 
 def count_chinese_characters(s):
+# the updated code will count all the CJK charactes + corresponding punctuation.
     count = 0
     for c in s:
-        if 'CJK UNIFIED IDEOGRAPH' in unicodedata.name(c, ''):
+        unicode_name = unicodedata.name(c, '')
+        unicode_codepoint = ord(c)
+
+        # Check for CJK Unified Ideographs (used in Chinese, Japanese, and Korean)
+        if 'CJK UNIFIED IDEOGRAPH' in unicode_name:
             count += 1
+
+        # Check for Hiragana (used in Japanese)
+        elif 'HIRAGANA' in unicode_name:
+            count += 1
+
+        # Check for Katakana (used in Japanese)
+        elif 'KATAKANA' in unicode_name:
+            count += 1
+
+        # Check for Hangul Syllables (used in Korean)
+        elif 'HANGUL SYLLABLE' in unicode_name:
+            count += 1
+
+        # Check for CJK Symbols and Punctuation
+        elif 0x3000 <= unicode_codepoint <= 0x303F:
+            count += 1
+
+        # Check for Halfwidth and Fullwidth Forms
+        elif 0xFF00 <= unicode_codepoint <= 0xFFEF:
+            count += 1
+
     return count
 
 
