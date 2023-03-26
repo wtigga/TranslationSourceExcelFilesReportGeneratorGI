@@ -8,6 +8,7 @@ from tkinter import filedialog
 from datetime import datetime
 from tkinter import ttk
 from tkinter import messagebox
+import webbrowser
 import openpyxl
 import unicodedata
 
@@ -501,19 +502,39 @@ def save_report():
 window = tk.Tk()
 
 # Set the window title
-window.title("Translation Report Generation Tool GI (v2023-03-25)")
+window.title("Translation Report Generation Tool GI (v2023-03-26)")
 
 # Set the window size
-window.geometry("600x200")
+window.geometry("750x270")
 
 # Create a frame to hold the browse button and file path
 frame = tk.Frame(window)
 
+# Info text
+info_text = tk.Label(window, text="Select a folder with source *.xlsx files")
+info_text.grid(row=0, column=0, sticky='w', padx=10, pady=0)
+
+# Create a frame to hold the browse button and file path
+frame = tk.Frame(window)
+frame.grid(row=1, column=0, padx=10, pady=10, sticky='w')
+
+
+# Create a button to browse for a folder
+browse_button = tk.Button(frame, text="1. Browse", command=browse_folder)
+browse_button.grid(row=1, column=0, padx=10, pady=5, sticky='w')
+
+# Create a text field to display the file path
+folder_path_var = tk.StringVar()
+folder_path_var.set(folder_location)
+folder_path_entry = tk.Entry(frame, textvariable=folder_path_var, width=80)
+folder_path_entry.grid(row=1, column=1, padx=5, pady=5, sticky='w')
+
+
 # Elements for saving report
-save_report_button = tk.Button(window, text="Save report to...", command=save_report)
-save_report_button.grid(row=0, column=0, padx=10, pady=10, sticky='w')
+save_report_button = tk.Button(window, text="2. Save report to...", command=save_report)
+save_report_button.grid(row=2, column=0, padx=10, pady=10, sticky='w')
 report_save_path_label = tk.Label(window, text=report_save_path)
-report_save_path_label.grid(row=0, column=0, padx=120, pady=10, sticky='w')
+report_save_path_label.grid(row=2, column=0, padx=120, pady=10, sticky='w')
 
 # Elements for language codes
 # lang_codes_label1 = tk.Label(window, text="Source Language Code:")
@@ -523,31 +544,29 @@ source_lang_combobox = ttk.Combobox(window, textvariable=source_lang_code, value
 source_lang_combobox.current(source_lang_codes_all.index('CHS'))
 # source_lang_combobox.grid(row=1, column=1, sticky='w', padx=10, pady=10)
 
-lang_codes_label2 = tk.Label(window, text="Target Language Code:")
-lang_codes_label2.grid(row=2, column=0, sticky='w', padx=10, pady=10)
+lang_codes_label2 = tk.Label(window, text="3. Target Language Code:")
+lang_codes_label2.grid(row=3, column=0, sticky='w', padx=10, pady=10)
 
 target_lang_code = tk.StringVar()
 target_lang_combobox = ttk.Combobox(window, textvariable=target_lang_code, values=source_lang_codes_all)
 target_lang_combobox.current(source_lang_codes_all.index('RU'))
-target_lang_combobox.grid(row=2, column=0, sticky='w', padx=150, pady=10)
-
-# Create a frame to hold the browse button and file path
-frame = tk.Frame(window)
-frame.grid(row=3, column=0, padx=10, pady=10, sticky='w')
-
-# Create a button to browse for a folder
-browse_button = tk.Button(frame, text="Browse", command=browse_folder)
-browse_button.pack(side="left")
-
-# Create a text field to display the file path
-folder_path_var = tk.StringVar()
-folder_path_var.set(folder_location)
-folder_path_entry = tk.Entry(frame, textvariable=folder_path_var, width=80)
-folder_path_entry.pack(side="left")
+target_lang_combobox.grid(row=3, column=0, sticky='w', padx=150, pady=10)
 
 # Button to process files
-process_button = tk.Button(window, text="Process Files", command=for_button)
-process_button.grid(row=4, column=0, padx=10, pady=10, sticky='w')
+process_button = tk.Button(window, text="4. Process Files", command=for_button)
+process_button.grid(row=6, column=0, padx=10, pady=10, sticky='w')
+
+# Text in the bottom
+def open_url(url):
+    webbrowser.open(url)
+about_label = tk.Label(window, text="github.com/wtigga  ||  Vladimir Zhdanov, 2023-03-26", fg="blue", cursor="hand2")
+about_text = tk.Label(window, text="This tool will generate translation reports based on source XLSX files. Check GitHub for documentation and sources.")
+about_text.grid(row=7, column=0, sticky='e', padx=0, pady=0)
+about_label.bind("<Button-1>", lambda event: open_url("https://github.com/wtigga/TranslationSourceExcelFilesReportGeneratorGI"))
+about_label.grid(row=8, column=0, sticky='e', padx=10, pady=0)
 
 # Start the main event loop
 window.mainloop()
+
+'''While the logic and architecture are products of the author's thinking capabilities,
+lots of functions in the code were written with the help of OpenAi's ChatGPT 3.5 and ChatGPT 4.'''
