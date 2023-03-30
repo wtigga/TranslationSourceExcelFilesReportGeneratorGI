@@ -9,8 +9,11 @@ from datetime import datetime
 from tkinter import ttk
 from tkinter import messagebox
 import webbrowser
+import sys
 import openpyxl
 import unicodedata
+
+current_version = '0.10 (2023-03-30)'
 
 
 #### SOURCE FILE LOAD & PREPARATION ####
@@ -526,12 +529,12 @@ def save_report():
 
 # Create a new window object
 window = tk.Tk()
-
+window_name = ('Translation Report Tool GI v.' + current_version)
 # Set the window title
-window.title("Translation Report Generation Tool GI (v2023-03-26)")
+window.title(window_name)
 
 # Set the window size
-window.geometry("750x270")
+window.geometry("620x270")
 
 # Create a frame to hold the browse button and file path
 frame = tk.Frame(window)
@@ -547,7 +550,7 @@ frame.grid(row=1, column=0, padx=10, pady=10, sticky='w')
 
 # Create a button to browse for a folder
 browse_button = tk.Button(frame, text="1. Browse", command=browse_folder)
-browse_button.grid(row=1, column=0, padx=10, pady=5, sticky='w')
+browse_button.grid(row=1, column=0, padx=0, pady=5, sticky='w')
 
 # Create a text field to display the file path
 folder_path_var = tk.StringVar()
@@ -585,11 +588,31 @@ process_button.grid(row=6, column=0, padx=10, pady=10, sticky='w')
 # Text in the bottom
 def open_url(url):
     webbrowser.open(url)
-about_label = tk.Label(window, text="github.com/wtigga  ||  Vladimir Zhdanov, 2023-03-26", fg="blue", cursor="hand2")
-about_text = tk.Label(window, text="This tool will generate translation reports based on source XLSX files. Check GitHub for documentation and sources.")
-about_text.grid(row=7, column=0, sticky='e', padx=0, pady=0)
+
+about_label = tk.Label(window, text="github.com/wtigga\nVladimir Zhdanov", fg="blue", cursor="hand2", justify="left")
+about_text = tk.Label(window, text=current_version)
+about_text.grid(row=10, column=0, sticky='w', padx=10, pady=0)
 about_label.bind("<Button-1>", lambda event: open_url("https://github.com/wtigga/TranslationSourceExcelFilesReportGeneratorGI"))
-about_label.grid(row=8, column=0, sticky='e', padx=10, pady=0)
+about_label.grid(row=11, column=0, sticky='w', padx=10, pady=0)
+
+# console output
+class TextRedirector:
+    def __init__(self, widget):
+        self.widget = widget
+
+    def write(self, text):
+        self.widget.configure(state='normal')
+        self.widget.insert(tk.END, text)
+        self.widget.see(tk.END)
+        self.widget.configure(state='disabled')
+
+    def flush(self):
+        pass
+
+output_text = tk.Text(window, wrap='word', height=10, state='disabled')
+output_text.grid(row=12, column=0, sticky='nsew')
+
+sys.stdout = TextRedirector(output_text)
 
 # Start the main event loop
 window.mainloop()
