@@ -13,7 +13,7 @@ import sys
 import openpyxl
 import unicodedata
 
-current_version = '0.10 (2023-03-30)'
+current_version = '0.11 (2023-03-31)'
 
 
 #### SOURCE FILE LOAD & PREPARATION ####
@@ -481,9 +481,7 @@ report_headers = [
     "Batch 6",
     "Live"
 ]
-language_codes = [
-    'CHS', 'CHT', 'DE', 'EN', 'ES', 'FR', 'ID', 'JP', 'KR', 'PT', 'RU', 'TH', 'VI', 'TR', 'IT'
-]
+language_codes = ['RU','en', 'kr', 'cht', 'jp', 'th', 'vi', 'id', 'es', 'ru', 'pt', 'de', 'fr', 'CHT', 'DE', 'EN', 'ES', 'FR', 'ID', 'JP', 'KR', 'PT', 'RU', 'TH', 'VI', 'TR', 'IT', 'CHS', 'chs']
 
 now = datetime.now()
 timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
@@ -549,21 +547,21 @@ frame.grid(row=1, column=0, padx=10, pady=10, sticky='w')
 
 
 # Create a button to browse for a folder
-browse_button = tk.Button(frame, text="1. Browse", command=browse_folder)
+browse_button = tk.Button(frame, text="Browse folder", command=browse_folder)
 browse_button.grid(row=1, column=0, padx=0, pady=5, sticky='w')
 
 # Create a text field to display the file path
 folder_path_var = tk.StringVar()
 folder_path_var.set(folder_location)
 folder_path_entry = tk.Entry(frame, textvariable=folder_path_var, width=80)
-folder_path_entry.grid(row=1, column=1, padx=5, pady=5, sticky='w')
+folder_path_entry.grid(row=1, column=0, padx=120, pady=5, sticky='w')
 
 
 # Elements for saving report
-save_report_button = tk.Button(window, text="2. Save report to...", command=save_report)
+save_report_button = tk.Button(window, text="Save report to...", command=save_report)
 save_report_button.grid(row=2, column=0, padx=10, pady=10, sticky='w')
 report_save_path_label = tk.Label(window, text=report_save_path)
-report_save_path_label.grid(row=2, column=0, padx=120, pady=10, sticky='w')
+report_save_path_label.grid(row=2, column=0, padx=130, pady=10, sticky='w')
 
 # Elements for language codes
 # lang_codes_label1 = tk.Label(window, text="Source Language Code:")
@@ -573,16 +571,16 @@ source_lang_combobox = ttk.Combobox(window, textvariable=source_lang_code, value
 source_lang_combobox.current(source_lang_codes_all.index('CHS'))
 # source_lang_combobox.grid(row=1, column=1, sticky='w', padx=10, pady=10)
 
-lang_codes_label2 = tk.Label(window, text="3. Target Language Code:")
+lang_codes_label2 = tk.Label(window, text="Target Language:")
 lang_codes_label2.grid(row=3, column=0, sticky='w', padx=10, pady=10)
 
 target_lang_code = tk.StringVar()
-target_lang_combobox = ttk.Combobox(window, textvariable=target_lang_code, values=source_lang_codes_all)
+target_lang_combobox = ttk.Combobox(window, textvariable=target_lang_code, values=source_lang_codes_all, width=5)
 target_lang_combobox.current(source_lang_codes_all.index('RU'))
-target_lang_combobox.grid(row=3, column=0, sticky='w', padx=150, pady=10)
+target_lang_combobox.grid(row=3, column=0, sticky='w', padx=130, pady=10)
 
 # Button to process files
-process_button = tk.Button(window, text="4. Process Files", command=for_button)
+process_button = tk.Button(window, text="Generate report", command=for_button)
 process_button.grid(row=6, column=0, padx=10, pady=10, sticky='w')
 
 # Text in the bottom
