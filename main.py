@@ -22,7 +22,7 @@ import openpyxl
 import unicodedata
 import re
 
-current_version = '0.22 (2023-04-04)'
+current_version = '0.23 (2023-04-04)'
 
 ### OPTIONS ###
 
@@ -47,13 +47,16 @@ def get_xlsx_file_paths_in_folder(folder_path):
     Returns:
         list: A list of Excel file paths within the specified folder with an '.xlsx' extension.
     """
-    xlsx_file_paths = []
-    for file_name in os.listdir(folder_path):
-        file_path = os.path.join(folder_path, file_name)
-        if os.path.isfile(file_path) and file_name.lower().endswith('.xlsx'):
-            xlsx_file_paths.append(file_path)
-    # print(xlsx_file_paths)
-    return xlsx_file_paths
+    try:
+        xlsx_file_paths = []
+        for file_name in os.listdir(folder_path):
+            file_path = os.path.join(folder_path, file_name)
+            if os.path.isfile(file_path) and file_name.lower().endswith('.xlsx'):
+                xlsx_file_paths.append(file_path)
+        return xlsx_file_paths
+    except FileNotFoundError:
+        print(f"Folder not found: {folder_path}")
+        return []
 
 
 # Chinese chars calc
