@@ -20,8 +20,13 @@ import webbrowser
 import sys
 import openpyxl
 import unicodedata
+import re
 
-current_version = '0.21 (2023-04-03)'
+current_version = '0.22 (2023-04-04)'
+
+### OPTIONS ###
+
+
 
 # Set Pandas display options
 pd.set_option('display.max_rows', None)
@@ -97,6 +102,12 @@ def count_chinese_characters(s):
 
     return count
 
+def count_regex(input_string):
+    if not isinstance(input_string, str):
+        return 0
+    pattern = r"(<.+?>)|(%[sdmyY])|({\d})|\((\+{\d})\)|({[A-Z]})|(\[[^\[]+\])|(\(\+\[[^\]]+\]\)%?)|(\d+\.?\d*%)|(\\n)|(\$\[[\w]+\])|(\{[A-Z_#0-9]+\})|(\bhttps?://\S+)|(\${\w+})|(&lt;t class=\"t_lc\"&gt;)|(&lt;/t&gt;)|@"
+    regex = re.compile(pattern)
+    return len(regex.findall(input_string))
 
 # Create a new DataFrame with headers from the report_headers argument
 def create_report_dataframe(report_headers):
@@ -132,6 +143,10 @@ def count_characters_in_column(df, column_name, count_function):
 
     return total_characters
 
+def count_regex_in_column(df, column_name, count_function):
+    regex_count = df[column_name].apply(count_function)
+    total_regex = regex_count.sum()
+    return(total_regex)
 
 def remove_empty_rows(df, target_column):
     # Remove rows where the target column is empty (NaN)
@@ -139,6 +154,17 @@ def remove_empty_rows(df, target_column):
 
     return filtered_df
 
+def count_unique_characters(df, column_name, count_function):
+    # Create a new dataframe with only the specified column
+    column_df = df[[column_name]].copy()
+
+    # Remove duplicate rows
+    column_df.drop_duplicates(inplace=True)
+
+    # Apply the count function to the content of the column and sum the results
+    total_characters = column_df[column_name].apply(count_function).sum()
+
+    return total_characters
 
 # take file path and parameters, return a df to concatenate into the report df
 def process_excel_file(excel_file, source_lang, target_lang, report_headers):
@@ -153,20 +179,25 @@ def process_excel_file(excel_file, source_lang, target_lang, report_headers):
     for sheet_name, data in all_sheets.items():
         # Filter the specified columns
         data = data[[source_lang, target_lang]]
-
+        unique = count_unique_characters(data, source_lang, count_chinese_characters)
         chinese_chars = count_characters_in_column(data, source_lang, count_chinese_characters)
+        regex_number = count_regex_in_column(data, source_lang, count_regex)
         data = remove_empty_rows(data, target_lang)
+
         translated_chars = count_characters_in_column(data, source_lang, count_chinese_characters)
         untranslated_chars = chinese_chars - translated_chars
         completeness = int((translated_chars / chinese_chars) * 100)
+        code_and_variables_perc = int((regex_number / chinese_chars) * 100)
 
         # Create a new DataFrame with the data for this iteration
         row_data = pd.DataFrame({"Key": [sheet_name],
-                                 "Chinese Wordcount": [chinese_chars],
+                                 "Source Wordcount": [chinese_chars],
                                  "Translated": [translated_chars],
                                  "Not_translated": [untranslated_chars],
                                  "file": [filename_with_extension],
-                                 "Completeness": [completeness]})
+                                 "Completeness": [completeness],
+                                 "Variables ratio": [code_and_variables_perc],
+                                 "Chinese Unique": [unique]})
 
         # Append the row_data to the interim_df
         interim_df = pd.concat([interim_df, row_data], ignore_index=True)
@@ -193,7 +224,7 @@ def process_list_of_excels(report_dataframe, file_list, source_lang, target_lang
         report_dataframe = pd.concat([report_dataframe, current_result], ignore_index=True)
 
     # Calculate the sum of the relevant columns
-    sum_row = report_dataframe[['Chinese Wordcount', 'Translated', 'Not_translated']].sum().to_frame().T
+    sum_row = report_dataframe[['Source Wordcount', 'Translated', 'Not_translated']].sum().to_frame().T
     sum_row['file'] = 'Total'
     sum_row['Key'] = '-'
 
@@ -230,6 +261,16 @@ def format_and_save_to_excel(df, filepath):
                 # elif 1 <= value_float <= 49:
                 # cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
                 cell.value = f'{value}%'
+            #for regex marking
+            if ws.cell(row=1, column=c_idx + 1).value == 'Variables ratio' and r_idx > 0:  # Exclude header row
+                value = ws.cell(row=r_idx + 1, column=c_idx + 1).value
+                if isinstance(value, int):
+                    value_float = float(value)
+                else:
+                    value_float = value
+                if value_float > 5:
+                    cell.fill = PatternFill(start_color="FFC0CB", end_color="FFC0CB", fill_type="solid")
+                cell.value = f'{value_float}%'
 
             # Apply cell alignment
             alignment = Alignment(horizontal='center', vertical='center')
@@ -271,7 +312,7 @@ def format_and_save_to_excel(df, filepath):
 report_headers_variable = [
     "file",
     "Key",
-    "Chinese Wordcount",
+    "Source Wordcount",
     "Translated",
     "Not_translated",
     "Completeness",
@@ -283,7 +324,9 @@ report_headers_variable = [
     "Batch 4",
     "Batch 5",
     "Batch 6",
-    "Live"
+    "Live",
+    "Variables ratio",
+    "Chinese Unique"
 ]
 language_codes = ['RU', 'en', 'kr', 'cht', 'jp', 'th', 'vi', 'id', 'es', 'ru', 'pt', 'de', 'fr', 'CHT', 'DE', 'EN',
                   'ES', 'FR', 'ID', 'JP', 'KR', 'PT', 'RU', 'TH', 'VI', 'TR', 'IT', 'CHS', 'chs']
@@ -302,6 +345,8 @@ source_lang_code = 'CHS'
 target_lang_code = 'RU'
 report_df = create_report_dataframe(report_headers_variable)
 output_filepath = ''
+
+
 
 
 def read_and_save(df, list, source, target, headers, output):
