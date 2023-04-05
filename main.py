@@ -1,7 +1,3 @@
-import pandas as pd
-import openpyxl
-import unicodedata
-import os
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
@@ -10,7 +6,6 @@ import pandas as pd
 from typing import Dict, List
 import os
 import glob
-import numpy as np
 import tkinter as tk
 from tkinter import filedialog
 from datetime import datetime
@@ -22,11 +17,10 @@ import openpyxl
 import unicodedata
 import re
 
-current_version = '0.23 (2023-04-04)'
+current_version = '0.25 (2023-04-05)'
 
 ### OPTIONS ###
-
-
+cjk_or_words_count = 'Chinese'  # should be either Chinese or Words
 
 # Set Pandas display options
 pd.set_option('display.max_rows', None)
@@ -60,6 +54,8 @@ def get_xlsx_file_paths_in_folder(folder_path):
 
 
 # Chinese chars calc
+
+'''
 def count_chinese_characters(s):
     """
     Counts the number of Chinese characters in a string.
@@ -104,6 +100,59 @@ def count_chinese_characters(s):
             count += 1
 
     return count
+'''
+
+
+def count_chinese_characters(s):
+    """
+    Counts the number of Chinese characters or words in a string.
+
+    Args:
+        s (str): The string to count Chinese characters or words in.
+
+    Returns:
+        int: The number of Chinese characters or words in the string.
+    """
+    s = str(s)
+    if s is None:
+        return 0
+
+    global cjk_or_words_count
+
+    if cjk_or_words_count == 'Words':
+        count = len(s.split())
+        return count
+    else:
+        count = 0
+        for c in s:
+            unicode_name = unicodedata.name(c, '')
+            unicode_codepoint = ord(c)
+
+            # Check for CJK Unified Ideographs (used in Chinese, Japanese, and Korean)
+            if 'CJK UNIFIED IDEOGRAPH' in unicode_name:
+                count += 1
+
+            # Check for Hiragana (used in Japanese)
+            elif 'HIRAGANA' in unicode_name:
+                count += 1
+
+            # Check for Katakana (used in Japanese)
+            elif 'KATAKANA' in unicode_name:
+                count += 1
+
+            # Check for Hangul Syllables (used in Korean)
+            elif 'HANGUL SYLLABLE' in unicode_name:
+                count += 1
+
+            # Check for CJK Symbols and Punctuation
+            elif 0x3000 <= unicode_codepoint <= 0x303F:
+                count += 1
+
+            # Check for Halfwidth and Fullwidth Forms
+            elif 0xFF00 <= unicode_codepoint <= 0xFFEF:
+                count += 1
+        return count
+
 
 def count_regex(input_string):
     if not isinstance(input_string, str):
@@ -111,6 +160,7 @@ def count_regex(input_string):
     pattern = r"(<.+?>)|(%[sdmyY])|({\d})|\((\+{\d})\)|({[A-Z]})|(\[[^\[]+\])|(\(\+\[[^\]]+\]\)%?)|(\d+\.?\d*%)|(\\n)|(\$\[[\w]+\])|(\{[A-Z_#0-9]+\})|(\bhttps?://\S+)|(\${\w+})|(&lt;t class=\"t_lc\"&gt;)|(&lt;/t&gt;)|@"
     regex = re.compile(pattern)
     return len(regex.findall(input_string))
+
 
 # Create a new DataFrame with headers from the report_headers argument
 def create_report_dataframe(report_headers):
@@ -146,16 +196,19 @@ def count_characters_in_column(df, column_name, count_function):
 
     return total_characters
 
+
 def count_regex_in_column(df, column_name, count_function):
     regex_count = df[column_name].apply(count_function)
     total_regex = regex_count.sum()
-    return(total_regex)
+    return (total_regex)
+
 
 def remove_empty_rows(df, target_column):
     # Remove rows where the target column is empty (NaN)
     filtered_df = df.dropna(subset=[target_column])
 
     return filtered_df
+
 
 def count_unique_characters(df, column_name, count_function):
     # Create a new dataframe with only the specified column
@@ -168,6 +221,7 @@ def count_unique_characters(df, column_name, count_function):
     total_characters = column_df[column_name].apply(count_function).sum()
 
     return total_characters
+
 
 # take file path and parameters, return a df to concatenate into the report df
 def process_excel_file(excel_file, source_lang, target_lang, report_headers):
@@ -182,6 +236,7 @@ def process_excel_file(excel_file, source_lang, target_lang, report_headers):
     for sheet_name, data in all_sheets.items():
         # Filter the specified columns
         data = data[[source_lang, target_lang]]
+        #    print(data)
         unique = count_unique_characters(data, source_lang, count_chinese_characters)
         chinese_chars = count_characters_in_column(data, source_lang, count_chinese_characters)
         regex_number = count_regex_in_column(data, source_lang, count_regex)
@@ -189,8 +244,14 @@ def process_excel_file(excel_file, source_lang, target_lang, report_headers):
 
         translated_chars = count_characters_in_column(data, source_lang, count_chinese_characters)
         untranslated_chars = chinese_chars - translated_chars
-        completeness = int((translated_chars / chinese_chars) * 100)
-        code_and_variables_perc = int((regex_number / chinese_chars) * 100)
+        if chinese_chars > 0:
+            completeness = int((translated_chars / chinese_chars) * 100)
+            code_and_variables_perc = int((regex_number / chinese_chars) * 100)
+        else:
+            completeness = 0
+            code_and_variables_perc = 0
+        # completeness = int((translated_chars / chinese_chars) * 100)
+        # code_and_variables_perc = int((regex_number / chinese_chars) * 100)
 
         # Create a new DataFrame with the data for this iteration
         row_data = pd.DataFrame({"Key": [sheet_name],
@@ -200,7 +261,7 @@ def process_excel_file(excel_file, source_lang, target_lang, report_headers):
                                  "file": [filename_with_extension],
                                  "Completeness": [completeness],
                                  "Variables ratio": [code_and_variables_perc],
-                                 "Chinese Unique": [unique]})
+                                 "Source Unique": [unique]})
 
         # Append the row_data to the interim_df
         interim_df = pd.concat([interim_df, row_data], ignore_index=True)
@@ -264,7 +325,7 @@ def format_and_save_to_excel(df, filepath):
                 # elif 1 <= value_float <= 49:
                 # cell.fill = PatternFill(start_color="FFFF00", end_color="FFFF00", fill_type="solid")
                 cell.value = f'{value}%'
-            #for regex marking
+            # for regex marking
             if ws.cell(row=1, column=c_idx + 1).value == 'Variables ratio' and r_idx > 0:  # Exclude header row
                 value = ws.cell(row=r_idx + 1, column=c_idx + 1).value
                 if isinstance(value, int):
@@ -329,7 +390,7 @@ report_headers_variable = [
     "Batch 6",
     "Live",
     "Variables ratio",
-    "Chinese Unique"
+    "Source Unique"
 ]
 language_codes = ['RU', 'en', 'kr', 'cht', 'jp', 'th', 'vi', 'id', 'es', 'ru', 'pt', 'de', 'fr', 'CHT', 'DE', 'EN',
                   'ES', 'FR', 'ID', 'JP', 'KR', 'PT', 'RU', 'TH', 'VI', 'TR', 'IT', 'CHS', 'chs']
@@ -348,8 +409,6 @@ source_lang_code = 'CHS'
 target_lang_code = 'RU'
 report_df = create_report_dataframe(report_headers_variable)
 output_filepath = ''
-
-
 
 
 def read_and_save(df, list, source, target, headers, output):
@@ -393,7 +452,7 @@ window_name = ('Translation Report Tool GI v.' + current_version)
 window.title(window_name)
 
 # Set the window size
-window.geometry("620x270")
+window.geometry("620x360")
 
 # Create a frame to hold the browse button and file path
 frame = tk.Frame(window)
@@ -424,24 +483,46 @@ report_save_path_label = tk.Label(window, text=report_save_path)
 report_save_path_label.grid(row=2, column=0, padx=130, pady=10, sticky='w')
 
 # Elements for language codes
-# lang_codes_label1 = tk.Label(window, text="Source Language Code:")
-# lang_codes_label1.grid(row=1, column=0, sticky='w', padx=10, pady=10)
+lang_codes_label1 = tk.Label(window, text="Source Language Code:")
+lang_codes_label1.grid(row=3, column=0, sticky='w', padx=10, pady=10)
 source_lang_code = tk.StringVar()
-source_lang_combobox = ttk.Combobox(window, textvariable=source_lang_code, values=source_lang_codes_all)
+source_lang_combobox = ttk.Combobox(window, textvariable=source_lang_code, values=source_lang_codes_all, width=5)
 source_lang_combobox.current(source_lang_codes_all.index('CHS'))
-# source_lang_combobox.grid(row=1, column=1, sticky='w', padx=10, pady=10)
+source_lang_combobox.grid(row=3, column=0, sticky='w', padx=150, pady=10)
 
 lang_codes_label2 = tk.Label(window, text="Target Language:")
-lang_codes_label2.grid(row=3, column=0, sticky='w', padx=10, pady=10)
+lang_codes_label2.grid(row=6, column=0, sticky='w', padx=10, pady=10)
 
 target_lang_code = tk.StringVar()
 target_lang_combobox = ttk.Combobox(window, textvariable=target_lang_code, values=source_lang_codes_all, width=5)
 target_lang_combobox.current(source_lang_codes_all.index('RU'))
-target_lang_combobox.grid(row=3, column=0, sticky='w', padx=130, pady=10)
+target_lang_combobox.grid(row=6, column=0, sticky='w', padx=150, pady=10)
 
 # Button to process files
 process_button = tk.Button(window, text="Generate report", command=for_button)
-process_button.grid(row=6, column=0, padx=10, pady=10, sticky='w')
+process_button.grid(row=8, column=0, padx=10, pady=10, sticky='w')
+
+
+## count source change
+
+def on_option_change(*args):
+    global cjk_or_words_count
+    cjk_or_words_count = var.get()
+    print("cjk_or_words_count:", cjk_or_words_count)
+
+
+# Create a StringVar to hold the selected option
+var = tk.StringVar(window)
+var.trace('w', on_option_change)
+
+var.set("Chinese")
+cjk_or_words_count = var.get()
+
+options = ["Chinese", "Words"]
+dropdown = tk.OptionMenu(window, var, *options)
+source_count_label = tk.Label(window, text="Count source Chinese or Words?")
+source_count_label.grid(row=7, column=0, sticky='w', padx=10, pady=10)
+dropdown.grid(row=7, column=0, padx=200, pady=10, sticky='w')
 
 
 # Text in the bottom
@@ -476,6 +557,8 @@ output_text = tk.Text(window, wrap='word', height=10, state='disabled')
 output_text.grid(row=12, column=0, sticky='nsew')
 
 sys.stdout = TextRedirector(output_text)
+
+# Options 2
 
 # Start the main event loop
 window.mainloop()
