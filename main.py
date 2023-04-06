@@ -16,7 +16,7 @@ import sys
 import unicodedata
 import re
 
-current_version = '0.25 (2023-04-05)'
+current_version = '0.26 (2023-04-06)'
 
 ### OPTIONS ###
 cjk_or_words_count = 'Chinese'  # should be either Chinese or Words
@@ -160,6 +160,12 @@ def remove_empty_rows(df, target_column):
 
     return filtered_df
 
+def count_unique_untranslated(df, target_column, source_column, count_function):
+    column_df = df.copy()
+    column_df = column_df.dropna(subset=[target_column])
+    column_df.drop_duplicates(inplace=True)
+    total_characters = column_df[source_column].apply(count_function).sum()
+    return total_characters
 
 def count_unique_characters(df, column_name, count_function):
     # Create a new dataframe with only the specified column
@@ -187,26 +193,40 @@ def process_excel_file(excel_file, source_lang, target_lang, report_headers):
     for sheet_name, data in all_sheets.items():
         # Filter the specified columns
         data = data[[source_lang, target_lang]]
-        #    print(data)
         unique = count_unique_characters(data, source_lang, count_chinese_characters)
-        chinese_chars = count_characters_in_column(data, source_lang, count_chinese_characters)
+        source_chars = count_characters_in_column(data, source_lang, count_chinese_characters)
         regex_number = count_regex_in_column(data, source_lang, count_regex)
+        data2 = data.copy()
         data = remove_empty_rows(data, target_lang)
 
-        translated_chars = count_characters_in_column(data, source_lang, count_chinese_characters)
-        untranslated_chars = chinese_chars - translated_chars
-        if chinese_chars > 0:
-            completeness = int((translated_chars / chinese_chars) * 100)
-            code_and_variables_perc = int((regex_number / chinese_chars) * 100)
+        global selection_unique_or_all
+        if selection_unique_or_all == 'All strings':
+            translated_chars = count_characters_in_column(data, source_lang, count_chinese_characters)
+            untranslated_chars = source_chars - translated_chars
+        else:
+            translated_chars = count_unique_untranslated(data2, target_lang, source_lang, count_chinese_characters)
+            untranslated_chars = unique - translated_chars
+
+        # need to update translated and untranslated functions to work properly!
+        if selection_unique_or_all == "All strings":
+            source_chars = source_chars
+        else:
+            source_chars = unique
+
+        #translated_chars = count_characters_in_column(data, source_lang, count_chinese_characters)
+        #untranslated_chars = source_chars - translated_chars
+        if source_chars > 0:
+            completeness = int((translated_chars / source_chars) * 100)
+            code_and_variables_perc = int((regex_number / source_chars) * 100)
         else:
             completeness = 0
             code_and_variables_perc = 0
-        # completeness = int((translated_chars / chinese_chars) * 100)
-        # code_and_variables_perc = int((regex_number / chinese_chars) * 100)
+
+
 
         # Create a new DataFrame with the data for this iteration
         row_data = pd.DataFrame({"Key": [sheet_name],
-                                 "Source Wordcount": [chinese_chars],
+                                 "Source Wordcount": [source_chars],
                                  "Translated": [translated_chars],
                                  "Not_translated": [untranslated_chars],
                                  "file": [filename_with_extension],
@@ -403,7 +423,7 @@ window_name = ('Translation Report Tool GI v.' + current_version)
 window.title(window_name)
 
 # Set the window size
-window.geometry("620x360")
+window.geometry("620x400")
 
 # Create a frame to hold the browse button and file path
 frame = tk.Frame(window)
@@ -450,8 +470,29 @@ target_lang_combobox.grid(row=6, column=0, sticky='w', padx=150, pady=10)
 
 # Button to process files
 process_button = tk.Button(window, text="Generate report", command=for_button)
-process_button.grid(row=8, column=0, padx=10, pady=10, sticky='w')
+process_button.grid(row=9, column=0, padx=10, pady=10, sticky='w')
 
+## unique change
+
+def on_unique_or_all_change(*args):
+    global selection_unique_or_all
+    selection_unique_or_all = unique_or_all_var.get()
+    print("selection_unique_or_all:", selection_unique_or_all)
+
+# Create a StringVar to hold the selected option
+unique_or_all_var = tk.StringVar(window)
+unique_or_all_var.trace('w', on_unique_or_all_change)
+
+# Set the default value
+unique_or_all_var.set("All strings")
+selection_unique_or_all = unique_or_all_var.get()
+
+# Create the dropdown menu
+options = ["All strings", "Unique only"]
+dropdown2 = tk.OptionMenu(window, unique_or_all_var, *options)
+source_count_label2 = tk.Label(window, text="Count all strings or unique only?")
+source_count_label2.grid(row=8, column=0, sticky='w', padx=10, pady=10)
+dropdown2.grid(row=8, column=0, padx=200, pady=5, sticky='w')
 
 ## count source change
 
@@ -508,7 +549,52 @@ output_text.grid(row=12, column=0, sticky='nsew')
 
 sys.stdout = TextRedirector(output_text)
 
-# Options 2
+#tooltips
+class ToolTip:
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.tip_window = None
+
+        self.widget.bind("<Enter>", self.on_enter)
+        self.widget.bind("<Leave>", self.on_leave)
+
+    def on_enter(self, event=None):
+        if self.tip_window:
+            self.tip_window.destroy()
+
+        x, y, _, _ = self.widget.bbox("insert")
+        x += self.widget.winfo_rootx() + 25
+        y += self.widget.winfo_rooty() + 25
+
+        self.tip_window = tk.Toplevel(self.widget)
+        self.tip_window.wm_overrideredirect(True)
+        self.tip_window.wm_geometry(f"+{x}+{y}")
+
+        label = tk.Label(self.tip_window, text=self.text, background="#ffffe0", relief="solid", borderwidth=1)
+        label.pack()
+
+    def on_leave(self, event=None):
+        if self.tip_window:
+            self.tip_window.destroy()
+            self.tip_window = None
+
+source_count_label_tooltip_text = 'Chinese is suitable when source is in Chinese or Japanese. It will count only those characters.\nWords suitable for other languages, like English, it will count words (delimited by a space).'
+source_count_label_tooltip = ToolTip(source_count_label, source_count_label_tooltip_text)
+dropdown_tooltip = ToolTip(dropdown, source_count_label_tooltip_text)
+
+source_count_label2_tooltip_text = 'All strings will count as is. Unique only will first drop the 100% dublicates in source in each sheet (ID).\nMight be slight disrepancy in completeness.'
+source_count_label2_tooltip = ToolTip(source_count_label2, source_count_label2_tooltip_text)
+dropdown2_tooltip = ToolTip(dropdown2, source_count_label2_tooltip_text)
+
+lang_codes_label1_tooltip_text = 'Case sensitive - "EN" and "en" are not the same.'
+lang_codes_label1_tooltip = ToolTip(lang_codes_label1, lang_codes_label1_tooltip_text)
+lang_codes_label2_tooltip = ToolTip(lang_codes_label2, lang_codes_label1_tooltip_text)
+
+info_text_tooltip_text = 'The folder must only contain source files, and nothing else.'
+info_text_tooltip = ToolTip(info_text, info_text_tooltip_text)
+browse_button_tooltip = ToolTip(browse_button, info_text_tooltip_text)
+
 
 # Start the main event loop
 window.mainloop()
