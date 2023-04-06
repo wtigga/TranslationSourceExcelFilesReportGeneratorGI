@@ -3,6 +3,9 @@
 # What is it
 This tool helps the translation manager to prepare the report based on the translation source XLSX files.
 
+![image](https://user-images.githubusercontent.com/7037184/230309721-73b6523b-4807-4bd4-a9dc-b60e4708fca0.png)
+
+
 The output XLSX report helps visualize:
 * Total number of source CJK characters for translation
 * How are they distributed between files
