@@ -13,7 +13,6 @@ from tkinter import ttk
 from tkinter import messagebox
 import webbrowser
 import sys
-import openpyxl
 import unicodedata
 import re
 
@@ -55,54 +54,6 @@ def get_xlsx_file_paths_in_folder(folder_path):
 
 # Chinese chars calc
 
-'''
-def count_chinese_characters(s):
-    """
-    Counts the number of Chinese characters in a string.
-
-    Args:
-        s (str): The string to count Chinese characters in.
-
-    Returns:
-        int: The number of Chinese characters in the string.
-    """
-    s = str(s)
-    if s is None:
-        return 0
-
-    count = 0
-    for c in s:
-        unicode_name = unicodedata.name(c, '')
-        unicode_codepoint = ord(c)
-
-        # Check for CJK Unified Ideographs (used in Chinese, Japanese, and Korean)
-        if 'CJK UNIFIED IDEOGRAPH' in unicode_name:
-            count += 1
-
-        # Check for Hiragana (used in Japanese)
-        elif 'HIRAGANA' in unicode_name:
-            count += 1
-
-        # Check for Katakana (used in Japanese)
-        elif 'KATAKANA' in unicode_name:
-            count += 1
-
-        # Check for Hangul Syllables (used in Korean)
-        elif 'HANGUL SYLLABLE' in unicode_name:
-            count += 1
-
-        # Check for CJK Symbols and Punctuation
-        elif 0x3000 <= unicode_codepoint <= 0x303F:
-            count += 1
-
-        # Check for Halfwidth and Fullwidth Forms
-        elif 0xFF00 <= unicode_codepoint <= 0xFFEF:
-            count += 1
-
-    return count
-'''
-
-
 def count_chinese_characters(s):
     """
     Counts the number of Chinese characters or words in a string.
@@ -117,7 +68,7 @@ def count_chinese_characters(s):
     if s is None:
         return 0
 
-    global cjk_or_words_count
+    global cjk_or_words_count  # this is to turn Chinese or Word calculation on or off
 
     if cjk_or_words_count == 'Words':
         count = len(s.split())
@@ -462,7 +413,6 @@ info_text = tk.Label(window, text="Select a folder with source *.xlsx files")
 info_text.grid(row=0, column=0, sticky='w', padx=10, pady=0)
 
 # Create a frame to hold the browse button and file path
-frame = tk.Frame(window)
 frame.grid(row=1, column=0, padx=10, pady=10, sticky='w')
 
 # Create a button to browse for a folder
