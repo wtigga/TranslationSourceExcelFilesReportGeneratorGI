@@ -3,9 +3,7 @@ from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.utils.dataframe import dataframe_to_rows
 from openpyxl.utils import get_column_letter
 import pandas as pd
-from typing import Dict, List
 import os
-import glob
 import tkinter as tk
 from tkinter import filedialog
 from datetime import datetime
@@ -16,9 +14,9 @@ import sys
 import unicodedata
 import re
 
-current_version = '0.26 (2023-04-06)'
+current_version = '0.27 (2023-04-07)'
 
-### OPTIONS ###
+# OPTIONS
 cjk_or_words_count = 'Chinese'  # should be either Chinese or Words
 
 # Set Pandas display options
@@ -108,7 +106,9 @@ def count_chinese_characters(s):
 def count_regex(input_string):
     if not isinstance(input_string, str):
         return 0
-    pattern = r"(<.+?>)|(%[sdmyY])|({\d})|\((\+{\d})\)|({[A-Z]})|(\[[^\[]+\])|(\(\+\[[^\]]+\]\)%?)|(\d+\.?\d*%)|(\\n)|(\$\[[\w]+\])|(\{[A-Z_#0-9]+\})|(\bhttps?://\S+)|(\${\w+})|(&lt;t class=\"t_lc\"&gt;)|(&lt;/t&gt;)|@"
+    pattern = r"(<.+?>)|(%[sdmyY])|({\d})|\((\+{\d})\)|({[A-Z]})|(\[[^\[]+\])|(\(\+\[[^\]]+\]\)%?)|(\d+\.?\d*%)|(" \
+              r"\\n)|(\$\[[\w]+\])|(\{[A-Z_#0-9]+\})|(\bhttps?://\S+)|(\${\w+})|(&lt;t class=\"t_lc\"&gt;)|(" \
+              r"&lt;/t&gt;)|@"
     regex = re.compile(pattern)
     return len(regex.findall(input_string))
 
@@ -151,7 +151,7 @@ def count_characters_in_column(df, column_name, count_function):
 def count_regex_in_column(df, column_name, count_function):
     regex_count = df[column_name].apply(count_function)
     total_regex = regex_count.sum()
-    return (total_regex)
+    return total_regex
 
 
 def remove_empty_rows(df, target_column):
@@ -160,12 +160,14 @@ def remove_empty_rows(df, target_column):
 
     return filtered_df
 
+
 def count_unique_untranslated(df, target_column, source_column, count_function):
     column_df = df.copy()
     column_df = column_df.dropna(subset=[target_column])
     column_df.drop_duplicates(inplace=True)
     total_characters = column_df[source_column].apply(count_function).sum()
     return total_characters
+
 
 def count_unique_characters(df, column_name, count_function):
     # Create a new dataframe with only the specified column
@@ -213,16 +215,14 @@ def process_excel_file(excel_file, source_lang, target_lang, report_headers):
         else:
             source_chars = unique
 
-        #translated_chars = count_characters_in_column(data, source_lang, count_chinese_characters)
-        #untranslated_chars = source_chars - translated_chars
+        # translated_chars = count_characters_in_column(data, source_lang, count_chinese_characters)
+        # untranslated_chars = source_chars - translated_chars
         if source_chars > 0:
             completeness = int((translated_chars / source_chars) * 100)
             code_and_variables_perc = int((regex_number / source_chars) * 100)
         else:
             completeness = 0
             code_and_variables_perc = 0
-
-
 
         # Create a new DataFrame with the data for this iteration
         row_data = pd.DataFrame({"Key": [sheet_name],
@@ -363,13 +363,14 @@ report_headers_variable = [
     "Variables ratio",
     "Source Unique"
 ]
-language_codes = ['RU', 'en', 'kr', 'cht', 'jp', 'th', 'vi', 'id', 'es', 'ru', 'pt', 'de', 'fr', 'CHT', 'DE', 'EN',
-                  'ES', 'FR', 'ID', 'JP', 'KR', 'PT', 'RU', 'TH', 'VI', 'TR', 'IT', 'CHS', 'chs']
+language_codes = ['RU', 'ES', 'FR', 'ID', 'JP', 'KR', 'PT', 'RU', 'TH', 'VI', 'TR', 'IT', 'CHS', 'en', 'kr', 'cht',
+                  'jp', 'th', 'vi', 'id', 'es', 'ru', 'pt', 'de', 'fr', 'CHT', 'DE', 'EN',
+                  'chs']
 now = datetime.now()
 timestamp = now.strftime("%Y-%m-%d_%H-%M-%S")
 
 # Variables that should be changed
-folder_location = os.getcwd() + '\source'
+folder_location = os.getcwd() + r'\source'
 
 source_lang_codes_all = language_codes
 # report_save_path = r'c:\2\report.xlsx'
@@ -382,8 +383,8 @@ report_df = create_report_dataframe(report_headers_variable)
 output_filepath = ''
 
 
-def read_and_save(df, list, source, target, headers, output):
-    one_file_df = process_list_of_excels(df, list, source, target, headers)
+def read_and_save(df, wordlist, source, target, headers, output):
+    one_file_df = process_list_of_excels(df, wordlist, source, target, headers)
     format_and_save_to_excel(one_file_df, output)
 
 
@@ -472,12 +473,14 @@ target_lang_combobox.grid(row=6, column=0, sticky='w', padx=150, pady=10)
 process_button = tk.Button(window, text="Generate report", command=for_button)
 process_button.grid(row=9, column=0, padx=10, pady=10, sticky='w')
 
-## unique change
+
+# unique change
 
 def on_unique_or_all_change(*args):
     global selection_unique_or_all
     selection_unique_or_all = unique_or_all_var.get()
     print("selection_unique_or_all:", selection_unique_or_all)
+
 
 # Create a StringVar to hold the selected option
 unique_or_all_var = tk.StringVar(window)
@@ -494,7 +497,8 @@ source_count_label2 = tk.Label(window, text="Count all strings or unique only?")
 source_count_label2.grid(row=8, column=0, sticky='w', padx=10, pady=10)
 dropdown2.grid(row=8, column=0, padx=200, pady=5, sticky='w')
 
-## count source change
+
+# count source change
 
 def on_option_change(*args):
     global cjk_or_words_count
@@ -549,7 +553,8 @@ output_text.grid(row=12, column=0, sticky='nsew')
 
 sys.stdout = TextRedirector(output_text)
 
-#tooltips
+
+# tooltips
 class ToolTip:
     def __init__(self, widget, text):
         self.widget = widget
@@ -579,11 +584,15 @@ class ToolTip:
             self.tip_window.destroy()
             self.tip_window = None
 
-source_count_label_tooltip_text = 'Chinese is suitable when source is in Chinese or Japanese. It will count only those characters.\nWords suitable for other languages, like English, it will count words (delimited by a space).'
+
+source_count_label_tooltip_text = 'Chinese is suitable when source is in Chinese or Japanese. It will count only ' \
+                                  'those characters.\nWords suitable for other languages, like English, it will count' \
+                                  ' words (delimited by a space).'
 source_count_label_tooltip = ToolTip(source_count_label, source_count_label_tooltip_text)
 dropdown_tooltip = ToolTip(dropdown, source_count_label_tooltip_text)
 
-source_count_label2_tooltip_text = 'All strings will count as is. Unique only will first drop the 100% dublicates in source in each sheet (ID).\nMight be slight disrepancy in completeness.'
+source_count_label2_tooltip_text = 'All strings will count as is. Unique only will first drop the 100% dublicates in ' \
+                                   'source in each sheet (ID).\nMight be slight disrepancy in completeness.'
 source_count_label2_tooltip = ToolTip(source_count_label2, source_count_label2_tooltip_text)
 dropdown2_tooltip = ToolTip(dropdown2, source_count_label2_tooltip_text)
 
@@ -594,7 +603,6 @@ lang_codes_label2_tooltip = ToolTip(lang_codes_label2, lang_codes_label1_tooltip
 info_text_tooltip_text = 'The folder must only contain source files, and nothing else.'
 info_text_tooltip = ToolTip(info_text, info_text_tooltip_text)
 browse_button_tooltip = ToolTip(browse_button, info_text_tooltip_text)
-
 
 # Start the main event loop
 window.mainloop()
