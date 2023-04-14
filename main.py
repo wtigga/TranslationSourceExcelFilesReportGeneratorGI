@@ -14,10 +14,7 @@ import sys
 import unicodedata
 import re
 
-current_version = '0.27 (2023-04-07)'
-
-# OPTIONS
-cjk_or_words_count = 'Chinese'  # should be either Chinese or Words
+current_version = '0.28 (2023-04-14)'
 
 # Set Pandas display options
 pd.set_option('display.max_rows', None)
@@ -242,8 +239,6 @@ def process_excel_file(excel_file, source_lang, target_lang, report_headers):
 
 def process_list_of_excels(report_dataframe, file_list, source_lang, target_lang, report_headers):
     for file_path in file_list:
-        # Get the filename with extension from the file path
-        filename_with_extension = os.path.basename(file_path)
 
         # Process the current Excel file
         current_result = process_excel_file(file_path, source_lang, target_lang, report_headers)
@@ -377,8 +372,6 @@ source_lang_codes_all = language_codes
 report_save_path = os.getcwd() + (str(r'\reports\report_{}.xlsx'.format(timestamp)))
 
 filelist = get_xlsx_file_paths_in_folder(folder_location)
-source_lang_code = 'CHS'
-target_lang_code = 'RU'
 report_df = create_report_dataframe(report_headers_variable)
 output_filepath = ''
 
@@ -491,6 +484,8 @@ unique_or_all_var.set("All strings")
 selection_unique_or_all = unique_or_all_var.get()
 
 # Create the dropdown menu
+
+# Create a custom style for the dropdown menu
 options = ["All strings", "Unique only"]
 dropdown2 = tk.OptionMenu(window, unique_or_all_var, *options)
 source_count_label2 = tk.Label(window, text="Count all strings or unique only?")
@@ -512,6 +507,9 @@ var.trace('w', on_option_change)
 
 var.set("Chinese")
 cjk_or_words_count = var.get()
+
+# Create a custom style for the dropdown menu
+
 
 options = ["Chinese", "Words"]
 dropdown = tk.OptionMenu(window, var, *options)
@@ -589,12 +587,10 @@ source_count_label_tooltip_text = 'Chinese is suitable when source is in Chinese
                                   'those characters.\nWords suitable for other languages, like English, it will count' \
                                   ' words (delimited by a space).'
 source_count_label_tooltip = ToolTip(source_count_label, source_count_label_tooltip_text)
-dropdown_tooltip = ToolTip(dropdown, source_count_label_tooltip_text)
 
 source_count_label2_tooltip_text = 'All strings will count as is. Unique only will first drop the 100% dublicates in ' \
                                    'source in each sheet (ID).\nMight be slight disrepancy in completeness.'
 source_count_label2_tooltip = ToolTip(source_count_label2, source_count_label2_tooltip_text)
-dropdown2_tooltip = ToolTip(dropdown2, source_count_label2_tooltip_text)
 
 lang_codes_label1_tooltip_text = 'Case sensitive - "EN" and "en" are not the same.'
 lang_codes_label1_tooltip = ToolTip(lang_codes_label1, lang_codes_label1_tooltip_text)
