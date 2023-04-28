@@ -7,6 +7,7 @@ from datetime import datetime
 from tkinter import filedialog
 from tkinter import messagebox
 from tkinter import ttk
+
 import pandas as pd
 import unicodedata
 from openpyxl import Workbook
@@ -14,7 +15,7 @@ from openpyxl.styles import PatternFill, Font, Alignment
 from openpyxl.utils import get_column_letter
 from openpyxl.utils.dataframe import dataframe_to_rows
 
-current_version = '0.29 (2023-04-27)'
+current_version = '0.30 (2023-04-28)'
 
 # Set Pandas display options
 pd.set_option('display.max_rows', None)
@@ -24,6 +25,12 @@ pd.set_option('display.expand_frame_repr', False)
 
 
 # File handling
+
+regex_pattern = r"(<.+?>)|(%[sdmyY])|({\d})|\((\+{\d})\)|({[A-Z]})|(\[[^\[]+\])|(\(\+\[[^\]]+\]\)%?)|(\d+\.?\d*%)|(" \
+                r"\\n)|(\$\[[\w]+\])|(\{[A-Z_#0-9]+\})|(\bhttps?://\S+)|(\${\w+})|(&lt;t class=\"t_lc\"&gt;)|(" \
+                r"&lt;/t&gt;)|@"
+
+script_name = 'Translation Report Tool GI v.' + current_version
 
 def get_xlsx_file_paths_in_folder(folder_path):
     """
@@ -103,10 +110,8 @@ def count_chinese_characters(s):
 def count_regex(input_string):
     if not isinstance(input_string, str):
         return 0
-    pattern = r"(<.+?>)|(%[sdmyY])|({\d})|\((\+{\d})\)|({[A-Z]})|(\[[^\[]+\])|(\(\+\[[^\]]+\]\)%?)|(\d+\.?\d*%)|(" \
-              r"\\n)|(\$\[[\w]+\])|(\{[A-Z_#0-9]+\})|(\bhttps?://\S+)|(\${\w+})|(&lt;t class=\"t_lc\"&gt;)|(" \
-              r"&lt;/t&gt;)|@"
-    regex = re.compile(pattern)
+    global regex_pattern
+    regex = re.compile(regex_pattern)
     return len(regex.findall(input_string))
 
 
@@ -117,7 +122,7 @@ def create_report_dataframe(report_headers):
     return df
 
 
-# Turn the whold Excel into a dict of dfs (this is faster than opening one by one)
+# Turn the whole Excel into a dict of dfs (this is faster than opening one by one)
 def load_sheets_as_dict(excel_file, source_lang, target_lang):
     # Read the entire Excel file into memory
     all_sheets = pd.read_excel(excel_file, engine='openpyxl', sheet_name=None)
@@ -412,7 +417,7 @@ def save_report():
 
 # Create a new window object
 window = tk.Tk()
-window_name = ('Translation Report Tool GI v.' + current_version)
+window_name = script_name
 # Set the window title
 window.title(window_name)
 
@@ -590,8 +595,8 @@ source_count_label_tooltip_text = 'Chinese is suitable when source is in Chinese
                                   ' words (delimited by a space).'
 source_count_label_tooltip = ToolTip(source_count_label, source_count_label_tooltip_text)
 
-source_count_label2_tooltip_text = 'All strings will count as is. Unique only will first drop the 100% dublicates in ' \
-                                   'source in each sheet (ID).\nMight be slight disrepancy in completeness.'
+source_count_label2_tooltip_text = 'All strings will count as is. Unique only will first drop the 100% duplicates in ' \
+                                   'source in each sheet (ID).\nMight be a slight inconsistency in completeness.'
 source_count_label2_tooltip = ToolTip(source_count_label2, source_count_label2_tooltip_text)
 
 lang_codes_label1_tooltip_text = 'Case sensitive - "EN" and "en" are not the same.'
